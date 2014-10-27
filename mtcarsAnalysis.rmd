@@ -1,0 +1,99 @@
+---
+title: "Motor Trend Analysis"
+author: "Iryna Garbuz"
+date: "26 october 2014"
+output:
+  html_document: default
+  pdf_document: default
+---
+Executive Summary
+======================
+The regression analysis provided below shows changes of Miles per Gallon (MPG)  to Transmission Type with different number of variables. In the simplest model, mpg over transmission types, shows that the manual transmission is 7.25 mpg better than automatic transmission. Taking cyliner,  weight and horsepower into account, the multivariate regression model indicates that the manual transmission is near 1.81 mpg better than the automatic transmission while the goodness of fit has been reached 84%.
+
+Data Processing
+===================
+We are using mtcat dataset to proceed our regression analysis. You can see Figure 2 in Apendix showing the matrix of scatterplots for this dataset. Also, figure 1 shows the density distributuion of MPG by Transmittion type. 
+First, convert numeric values to factor values.
+```{r results='hide', echo=FALSE}
+data(mtcars)
+mtcars$cyl <- factor (mtcars$cyl)
+mtcars$vs   <- factor(mtcars$vs)
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+mtcars$am   <- factor(mtcars$am,labels=c("Automatic","Manual"))
+```
+Regression Model
+==================
+Firstly, we built a simple model to directly measure the apparent influence of transmission on MPG. The first non-intercept coefficient of the model, 7.245, suggested an increase of 7.245 miles per gallon when switching from automatic to manual transmission (with p-value < 0.0001). However, the low R- squared value (0.3385) of the model indicated that transmission alone is not a very good predictor of the variation in MPG.
+```{r cache=TRUE}
+fit <- lm(mpg~am, mtcars)
+summary(fit)$coeff
+```
+We build several more models with different number of parameters to find the best one. I added the model with all parameters to compare it with others:
+```{r cache=TRUE, results='hide'}
+fitall <- lm(mpg~.,mtcars)
+fitbest <- step(fitall, direction ="both")
+```
+
+```{r cache=TRUE, results='markup', tidy=TRUE}
+anova(fitbest, fit, fitall)
+```
+Results shows that the best moel includes such paramteres-transmission, cyliner, weight and horsepower into account. Looking at the above results, the p-value obtained is highly significant and we reject the null hypothesis that the confounder variables cyl, hp and wt don’t contribute to the accuracy of the model.
+Let's see what influence of transmission on mpg is shown:
+```{r cache=TRUE, tidy=TRUE}
+summary(fitbest)
+```
+The multivariate regression model indicates that the manual transmission is near 1.81 mpg better than the automatic transmission while the goodness of fit has been reached 84%.
+
+Model Diagnostics
+===================
+Figure 3 in Apendix shows residuals variation and different aspects of model fit. This helped us in examining the residuals and finding leverage points to find any potential problems with the model.
+
+Statistical Inference
+======================
+In this section, we perform a t-test on the two subsets of mpg data: manual and automatic transmission assuming that the transmission data has a normal distribution and tests the null hypothesis that they come from the same distribution. Based on the t-test results, we reject the null hypothesis that the mpg distributions for manual and automatic transmissions are the same.
+
+```{r}
+t.test(mpg ~ am, data = mtcars)
+```
+
+Conclusions
+==============
+Based on the analysis done in this project, we can conclude that:
+
+- Cars with Manual transmission get 1.8 more miles per gallon compared to cars with Automatic transmission. (1.8 adjusted for hp, cyl, and wt).
+
+- mpg will decrease by 2.5 for every 1000 lb increase in wt.
+
+- mpg decreases negligibly (only 0.32) with every increase of 10 in hp.
+
+Apendix
+==================
+
+```{r fig.height=3, fig.width=5, echo=FALSE}
+library(sm)
+sm.density.compare(mtcars$mpg, mtcars$am, xlab="Miles Per Gallon")
+title(main="MPG Distribution by Car Type Transmission")
+
+# add legend via mouse click
+legend("topright", legend=c("Auto", "Manual"),  text.col = c("red", "green"))
+```
+
+Figure 1: A Chart showing MPG distribution by Transmission Type
+
+```{r}
+pairs(mpg ~ ., data = mtcars)
+```
+Figure 1: A matrix of scatterplots for mtcars dataset
+
+```{r}
+par(mfrow=c(2, 2))
+plot(fitbest)
+```
+Figure 2: Residuals variation for Best Regression Model
+
+```{r fig.height=3, fig.width=3}
+boxplot(mpg ~ am, data = mtcars, col = (c("red","blue")), ylab = "Miles Per Gallon", xlab = "Transmission Type")
+```
+
+Figure 4: Boxplot of MPG by Transmission Type
